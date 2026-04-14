@@ -24,7 +24,7 @@ class Query(APIView):
         if cached_result:
             return Response(
                 {"status": "success",
-                "result": cached_result},
+                "data": cached_result},
                 status=status.HTTP_200_OK
             )
 
@@ -36,8 +36,8 @@ class Query(APIView):
             if response.status_code == 200:
                 data = response.json()
 
-                if data.get('gender') == 'null' or data.get('count', 0) == 0:
-                    return Response({"status": "error", "message": 'No prediction available for the provided name.'}, status=status.HTTP_404_NOT_FOUND)
+                if data.get('gender') == None or data.get('count', 0) == 0:
+                    return Response({"status": "error", "message": 'No prediction available for the provided name.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                 probability = data.get('probability', 0)
                 sample_size = data.get('count', 0)
@@ -59,7 +59,7 @@ class Query(APIView):
                 }
                 cache.set(cache_name, result)
 
-                return Response({"status": "success", "result": result}, status=status.HTTP_200_OK)
+                return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
                 
             else:
                 return Response({"status": "error", "message": 'Failed to classify the name.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
