@@ -8,6 +8,8 @@ from datetime import timezone
 from django.core.cache import cache
 import httpx
 
+http_client = httpx.Client(timeout=10.0, limits=httpx.Limits(max_connections=10, max_keepalive_connections=5))
+
 
 class Query(APIView):
     def get(self, request):
@@ -32,6 +34,9 @@ class Query(APIView):
 
             if response.status_code == 200:
                 data = response.json()
+
+                if data.get('gender') == 'null' or data.get('count', 0) == 0:
+                    return Response({"status": "error", "message": 'No prediction available for the provided name.'}, status=status.HTTP_404_NOT_FOUND)
 
                 probability = data.get('probability', 0)
                 sample_size = data.get('count', 0)
