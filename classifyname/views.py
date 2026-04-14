@@ -1,20 +1,22 @@
 from django.shortcuts import render
-import requests
+# import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from email.utils import parsedate_to_datetime
 from datetime import timezone
 from django.core.cache import cache
+import httpx
+
 
 class Query(APIView):
     def get(self, request):
         name = request.query_params.get('name')
         if not name:
-            return Response({'error': 'Name parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status": "error", "message": 'Name parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
         if name.isdigit():
-            return Response({'error': 'Name parameter must be a string.'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-        
+            return Response({"status": "error", "message": 'Name parameter must be a string.'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
         cache_name = f'classifyname:{name.lower()}'
         cached_result = cache.get(cache_name)
         if cached_result:
@@ -26,7 +28,7 @@ class Query(APIView):
         # Call the external API to classify the name
         try:
             api_url = f'https://api.genderize.io?name={name}'
-            response = requests.get(api_url)
+            response = httpx.get(api_url, params={'name': name})
 
             if response.status_code == 200:
                 data = response.json()
@@ -51,9 +53,9 @@ class Query(APIView):
                 }
                 cache.set(cache_name, result)
 
-                return Response(result, status=status.HTTP_200_OK)
+                return Response({"status": "success", "result": result}, status=status.HTTP_200_OK)
                 
             else:
-                return Response({'error': 'Failed to classify the name.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+                return Response({"status": "error", "message": 'Failed to classify the name.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
