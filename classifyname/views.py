@@ -23,7 +23,8 @@ class Query(APIView):
         cached_result = cache.get(cache_name)
         if cached_result:
             return Response(
-                cached_result,
+                {"status": "success",
+                "result": cached_result},
                 status=status.HTTP_200_OK
             )
 
